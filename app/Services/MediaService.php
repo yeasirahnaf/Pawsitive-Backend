@@ -24,7 +24,6 @@ class MediaService
         $nextSortOrder = $pet->images()->max('sort_order') + 1;
 
         foreach ($files as $file) {
-            /** @var UploadedFile $file */
             $path = $file->store(self::DIRECTORY . '/' . $pet->id, self::DISK);
 
             $isThumb = ! $hasThumbnail;
@@ -57,7 +56,6 @@ class MediaService
     {
         $image = PetImage::where('id', $imageId)->where('pet_id', $pet->id)->firstOrFail();
 
-        // Clear existing thumbnail
         $pet->images()->where('is_thumbnail', true)->update(['is_thumbnail' => false]);
 
         $image->update(['is_thumbnail' => true]);

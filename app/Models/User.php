@@ -38,7 +38,7 @@ class User extends Authenticatable
         ];
     }
 
-    // ─── Relationships ────────────────────────────────────────────────────────
+
 
     public function pets(): HasMany
     {
@@ -60,7 +60,7 @@ class User extends Authenticatable
         return $this->hasMany(OrderStatusHistory::class, 'changed_by');
     }
 
-    // ─── Helpers ──────────────────────────────────────────────────────────────
+
 
     public function isAdmin(): bool
     {

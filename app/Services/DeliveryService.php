@@ -26,7 +26,6 @@ class DeliveryService
             }
             if ($data['status'] === 'delivered' && ! $delivery->delivered_at) {
                 $update['delivered_at'] = now();
-                // Also mark the parent order as delivered
                 $delivery->order->update(['status' => 'delivered', 'delivered_at' => now()]);
             }
         }

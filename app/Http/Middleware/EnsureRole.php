@@ -16,12 +16,10 @@ class EnsureRole
     {
         $user = $request->user();
 
-        // 1. If not authenticated at all, throw AuthenticationException (handled globally as 401 "Login required")
         if (! $user) {
             throw new \Illuminate\Auth\AuthenticationException();
         }
 
-        // 2. If authenticated, but missing the correct token ability OR database role, return 403
         if (! $user->tokenCan("role:{$role}") || $user->role !== $role) {
             return response()->json([
                 'success' => false,

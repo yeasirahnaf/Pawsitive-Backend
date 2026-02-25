@@ -27,7 +27,7 @@ class CartItem extends Model
         ];
     }
 
-    // ─── Relationships ────────────────────────────────────────────────────────
+
 
     public function user(): BelongsTo
     {
@@ -39,7 +39,7 @@ class CartItem extends Model
         return $this->belongsTo(Pet::class);
     }
 
-    // ─── Helpers ──────────────────────────────────────────────────────────────
+
 
     public function isExpired(): bool
     {

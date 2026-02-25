@@ -40,7 +40,7 @@ class Order extends Model
         ];
     }
 
-    // ─── Relationships ────────────────────────────────────────────────────────
+
 
     public function user(): BelongsTo
     {

@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'bigdatacloud' => [
+        'key' => env('GEOLOCATION_API_KEY', ''),
+    ],
+
 ];

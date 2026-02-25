@@ -13,7 +13,7 @@ class OrderStatusHistory extends Model
     public $incrementing = false;
     public $timestamps   = false;
 
-    protected $table = 'order_status_history'; // Laravel would auto-pluralize to order_status_histories
+    protected $table = 'order_status_history';
 
     protected $keyType = 'string';
 

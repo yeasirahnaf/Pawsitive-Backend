@@ -69,8 +69,6 @@ class PetController extends Controller
         return response()->json(['success' => true, 'message' => 'Pet soft-deleted.']);
     }
 
-    // ─── Image endpoints ──────────────────────────────────────────────────────
-
     public function uploadImages(Request $request, string $id): JsonResponse
     {
         $request->validate([

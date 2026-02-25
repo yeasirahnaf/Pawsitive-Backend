@@ -9,7 +9,7 @@ class UpdateDeliveryRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true; // role:admin checked via middleware
+        return true;
     }
 
     public function rules(): array

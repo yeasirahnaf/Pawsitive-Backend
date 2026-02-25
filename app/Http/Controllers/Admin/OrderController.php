@@ -59,10 +59,6 @@ class OrderController extends Controller
         return response()->json(['success' => true, 'data' => $updated]);
     }
 
-    /**
-     * DELETE /api/v1/admin/orders/{id}
-     * Spec: cancel order with a required cancellation_reason in the body.
-     */
     public function cancel(Request $request, string $id): JsonResponse
     {
         $request->validate([

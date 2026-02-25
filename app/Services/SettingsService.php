@@ -34,7 +34,6 @@ class SettingsService
     {
         $setting = SystemSetting::where('key', $key)->firstOrFail();
 
-        // Validate value matches declared type
         match ($setting->type) {
             'integer' => is_numeric($rawValue) ? null : throw ValidationException::withMessages(['value' => ['Value must be a valid integer.']]),
             'boolean' => in_array(strtolower($rawValue), ['true', 'false', '1', '0']) ? null : throw ValidationException::withMessages(['value' => ['Value must be true or false.']]),

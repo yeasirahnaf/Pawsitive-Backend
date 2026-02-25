@@ -13,10 +13,6 @@ class DeliveryController extends Controller
 {
     public function __construct(private DeliveryService $deliveries) {}
 
-    /**
-     * GET /api/v1/admin/deliveries
-     * Spec: Query param ?month={YYYY-MM} for calendar view, or ?status= for flat list.
-     */
     public function index(Request $request): JsonResponse
     {
         $request->validate([
@@ -24,7 +20,6 @@ class DeliveryController extends Controller
             'status' => ['nullable', 'string'],
         ]);
 
-        // Calendar view when ?month=YYYY-MM is provided
         if ($request->filled('month')) {
             [$year, $month] = explode('-', $request->input('month'));
 

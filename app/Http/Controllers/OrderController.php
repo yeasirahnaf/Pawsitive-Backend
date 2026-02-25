@@ -12,9 +12,6 @@ class OrderController extends Controller
 {
     public function __construct(private OrderService $orders) {}
 
-    /**
-     * POST /api/v1/orders — place an order from active cart.
-     */
     public function place(PlaceOrderRequest $request): JsonResponse
     {
         $order = $this->orders->create(
@@ -29,9 +26,6 @@ class OrderController extends Controller
         ], 201);
     }
 
-    /**
-     * GET /api/v1/orders — authenticated user's order history.
-     */
     public function history(Request $request): JsonResponse
     {
         $orders = Order::with(['items', 'delivery'])
@@ -50,10 +44,7 @@ class OrderController extends Controller
         ]);
     }
 
-    /**
-     * GET /api/v1/orders/{orderNumber}?email={email}
-     * Public order tracking — email verified to prevent enumeration.
-     */
+   
     public function track(Request $request, string $orderNumber): JsonResponse
     {
         $request->validate(['email' => ['nullable', 'email']]);
@@ -61,7 +52,6 @@ class OrderController extends Controller
         $query = Order::with(['statusHistory', 'delivery'])
             ->where('order_number', $orderNumber);
 
-        // Require email to match when provided, OR allow if order belongs to a logged-in user
         if ($request->filled('email')) {
             $query->where(function ($q) use ($request) {
                 $q->whereHas('user', fn ($u) => $u->where('email', $request->input('email')))

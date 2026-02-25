@@ -44,7 +44,7 @@ class Pet extends Model
         ];
     }
 
-    // ─── Relationships ────────────────────────────────────────────────────────
+
 
     public function creator(): BelongsTo
     {
@@ -76,7 +76,7 @@ class Pet extends Model
         return $this->hasMany(OrderItem::class);
     }
 
-    // ─── Helpers ──────────────────────────────────────────────────────────────
+
 
     public function isAvailable(): bool
     {

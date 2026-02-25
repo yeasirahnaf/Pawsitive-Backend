@@ -22,13 +22,10 @@ class OrderService
     public function create(array $data, ?string $userId, string $sessionId): Order
     {
         return DB::transaction(function () use ($data, $userId, $sessionId) {
-            // ── 1. Load cart items ───────────────────────────────────────────
             $cartItems = CartItem::with('pet')
                 ->when(
                     $userId,
-                    // Authenticated: scope strictly to this user
                     fn ($q) => $q->where('user_id', $userId),
-                    // Guest: scope strictly to session (must not belong to any user)
                     fn ($q) => $q->whereNull('user_id')->where('session_id', $sessionId)
                 )
                 ->get();
@@ -37,22 +34,15 @@ class OrderService
                 throw ValidationException::withMessages(['cart' => ['Your cart is empty.']]);
             }
 
-            // ── 2. Refresh locks inside the transaction ───────────────────────
-            // Extend the lock for all items being ordered so they cannot expire
-            // between now and when the pet status is updated to 'sold'.
-            // The real double-booking guard is pet.status='reserved'; the
-            // locked_until field is a UI reservation hint, not a hard gate.
             CartItem::whereIn('id', $cartItems->pluck('id'))
                 ->update(['locked_until' => now()->addMinutes(15)]);
 
-            // ── 3. Resolve / create delivery address ─────────────────────────
             $address = Address::create([
                 'address_line' => $data['address_line'],
                 'city'         => $data['city'] ?? null,
                 'area'         => $data['area'] ?? null,
             ]);
 
-            // ── 5. Calculate subtotal ─────────────────────────────────────────────
             $subtotal = $cartItems->sum(fn ($item) => $item->pet->price);
 
             // ── 6. Create the order ───────────────────────────────────────────────
@@ -67,7 +57,6 @@ class OrderService
                 'notes'               => $data['notes'] ?? null,
             ]);
 
-            // ── 7. Create order items (with snapshots) ───────────────────────
             foreach ($cartItems as $item) {
                 OrderItem::create([
                     'order_id'             => $order->id,
@@ -78,12 +67,10 @@ class OrderService
                     'price_snapshot'       => $item->pet->price,
                 ]);
 
-                // Mark pet as sold
                 $item->pet->update(['status' => 'sold']);
                 $item->delete();
             }
 
-            // ── 8. Create initial status history entry ───────────────────────
             OrderStatusHistory::create([
                 'order_id'   => $order->id,
                 'status'     => 'pending',
@@ -91,13 +78,11 @@ class OrderService
                 'notes'      => 'Order placed.',
             ]);
 
-            // ── 9. Create delivery record ────────────────────────────────────
             Delivery::create([
                 'order_id' => $order->id,
                 'status'   => 'pending',
             ]);
 
-            // ── 10. Send confirmation email (synchronous) ────────────────────
             $this->notifications->sendOrderConfirmation($order->load(['items', 'deliveryAddress', 'user', 'guestContact']));
 
             return $order;
@@ -111,7 +96,6 @@ class OrderService
      */
     public function updateStatus(Order $order, string $newStatus, string $adminId, ?string $notes = null, ?string $cancellationReason = null): Order
     {
-        // Guard invalid transitions
         $allowed = $this->allowedTransitions($order->status);
         if (! in_array($newStatus, $allowed)) {
             throw ValidationException::withMessages([
@@ -126,7 +110,6 @@ class OrderService
                 $update['cancellation_reason'] = $cancellationReason;
                 $update['cancelled_at']        = now();
 
-                // Release pets back to available
                 foreach ($order->items as $item) {
                     if ($item->pet) {
                         $item->pet->update(['status' => 'available']);
@@ -150,8 +133,6 @@ class OrderService
 
         return $order->fresh(['items', 'statusHistory', 'delivery']);
     }
-
-    // ─── Private ──────────────────────────────────────────────────────────────
 
     private function generateOrderNumber(): string
     {

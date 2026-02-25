@@ -20,7 +20,6 @@ class PetService
         $query = Pet::with(['thumbnail', 'behaviours'])
             ->whereNull('deleted_at');
 
-        // Status filter — default to available for public
         $query->where('status', $filters['status'] ?? 'available');
 
         if (! empty($filters['species'])) {
@@ -51,12 +50,10 @@ class PetService
             $query->whereHas('behaviours', fn ($q) => $q->where('behaviour', $filters['behaviour']));
         }
 
-        // Full-text trigram search
         if (! empty($filters['search'])) {
             $query->whereRaw("name % ?", [$filters['search']]);
         }
 
-        // Nearby filter using PostGIS ST_DWithin
         if (! empty($filters['lat']) && ! empty($filters['lng']) && ! empty($filters['radius_km'])) {
             $query->whereRaw(
                 "ST_DWithin(geo_point, ST_SetSRID(ST_MakePoint(?, ?), 4326)::geography, ?)",
@@ -126,7 +123,6 @@ class PetService
                 $this->syncBehaviours($pet, $data['behaviours'] ?? []);
             }
 
-            // Re-sync geo_point if lat/lng changed
             if (isset($data['latitude']) || isset($data['longitude'])) {
                 $pet->refresh();
                 $pet->syncGeoPoint();
@@ -161,8 +157,6 @@ class PetService
 
         $pet->delete();
     }
-
-    // ─── Private ──────────────────────────────────────────────────────────────
 
     private function syncBehaviours(Pet $pet, array $behaviours): void
     {

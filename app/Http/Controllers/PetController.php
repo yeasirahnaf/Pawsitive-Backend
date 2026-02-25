@@ -14,35 +14,28 @@ class PetController extends Controller
         private GeolocationService $geo,
     ) {}
 
-    /**
-     * GET /api/v1/pets
-     * Spec query params: q, species[], breed, age_min, age_max, gender, size[],
-     *                    color, price_min, price_max, behaviour[], latitude, longitude,
-     *                    radius_km, sort_by, sort_order, page, per_page
-     */
     public function index(Request $request): JsonResponse
     {
         $filters = [
-            'search'     => $request->input('q'),                   // spec: q
-            'species'    => $request->input('species'),             // array-capable
+            'search'     => $request->input('q'),
+            'species'    => $request->input('species'),
             'breed'      => $request->input('breed'),
             'gender'     => $request->input('gender'),
-            'size'       => $request->input('size'),                // array-capable
+            'size'       => $request->input('size'),
             'color'      => $request->input('color'),
-            'min_price'  => $request->input('price_min'),          // spec: price_min
-            'max_price'  => $request->input('price_max'),          // spec: price_max
-            'min_age'    => $request->input('age_min'),            // spec: age_min
-            'max_age'    => $request->input('age_max'),            // spec: age_max
-            'behaviour'  => $request->input('behaviour'),          // spec: behaviour[]
-            'lat'        => $request->input('latitude'),           // spec: latitude
-            'lng'        => $request->input('longitude'),          // spec: longitude
+            'min_price'  => $request->input('price_min'),
+            'max_price'  => $request->input('price_max'),
+            'min_age'    => $request->input('age_min'),
+            'max_age'    => $request->input('age_max'),
+            'behaviour'  => $request->input('behaviour'),
+            'lat'        => $request->input('latitude'),
+            'lng'        => $request->input('longitude'),
             'radius_km'  => $request->input('radius_km'),
             'sort_by'    => $request->input('sort_by'),
-            'sort_dir'   => $request->input('sort_order', 'desc'), // spec: sort_order
-            'per_page'   => $request->integer('per_page', 12),    // spec default: 12
+            'sort_dir'   => $request->input('sort_order', 'desc'),
+            'per_page'   => $request->integer('per_page', 12),
         ];
 
-        // Auto-detect location from IP if lat/lng not provided
         if (empty($filters['lat']) || empty($filters['lng'])) {
             $detected = $this->geo->detectFromIp($request->ip());
             if ($detected) {
@@ -65,9 +58,6 @@ class PetController extends Controller
         ]);
     }
 
-    /**
-     * GET /api/v1/pets/{id} — public pet detail.
-     */
     public function show(string $id): JsonResponse
     {
         $pet = $this->pets->findOrFail($id);

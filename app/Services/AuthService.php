@@ -19,7 +19,7 @@ class AuthService
         $user = User::create([
             'name'     => $data['name'],
             'email'    => $data['email'],
-            'password' => $data['password'], // hashed by cast
+            'password' => $data['password'],
             'phone'    => $data['phone'] ?? null,
             'role'     => 'customer',
         ]);
@@ -44,7 +44,6 @@ class AuthService
             ]);
         }
 
-        // ─── Lockout check ────────────────────────────────────────────────────
         if ($user->isLocked()) {
             $minutes = (int) now()->diffInMinutes($user->locked_until, false) * -1;
             throw ValidationException::withMessages([
@@ -52,7 +51,6 @@ class AuthService
             ]);
         }
 
-        // ─── Password verification ────────────────────────────────────────────
         if (! Hash::check($password, $user->password)) {
             $attempts = $user->failed_login_attempts + 1;
 
@@ -60,7 +58,7 @@ class AuthService
 
             if ($attempts >= self::MAX_ATTEMPTS) {
                 $update['locked_until']          = now()->addMinutes(self::LOCKOUT_MINUTES);
-                $update['failed_login_attempts'] = 0; // reset after lockout
+                $update['failed_login_attempts'] = 0;
             }
 
             $user->update($update);
@@ -70,7 +68,6 @@ class AuthService
             ]);
         }
 
-        // ─── Reset counters on success ────────────────────────────────────────
         $user->update([
             'failed_login_attempts' => 0,
             'locked_until'          => null,

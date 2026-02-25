@@ -31,10 +31,6 @@ class SettingsController extends Controller
         return response()->json(['success' => true, 'data' => $setting]);
     }
 
-    /**
-     * PUT /api/v1/admin/settings
-     * Spec: bulk update all settings in a single { key: value, ... } body.
-     */
     public function updateAll(Request $request): JsonResponse
     {
         $request->validate([
