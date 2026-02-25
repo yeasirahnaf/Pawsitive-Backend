@@ -44,7 +44,10 @@ class CartService
         return CartItem::create([
             'pet_id'       => $petId,
             'user_id'      => $userId,
-            'session_id'   => $sessionId,
+            // Authenticated users own their items via user_id; never store the
+            // guest session_id alongside a user_id or items can appear in both
+            // the guest cart and the logged-in user's cart simultaneously.
+            'session_id'   => $userId ? null : $sessionId,
             'locked_until' => now()->addMinutes(self::LOCK_MINUTES),
         ]);
     }
@@ -56,9 +59,22 @@ class CartService
     {
         $this->releaseExpiredLocks();
 
+        // For authenticated users, extend the lock on every cart view so the
+        // 15-minute window resets with each interaction rather than from the
+        // moment the item was first added (which would cause spurious expiry).
+        if ($userId) {
+            CartItem::where('user_id', $userId)
+                ->update(['locked_until' => now()->addMinutes(self::LOCK_MINUTES)]);
+        }
+
         return CartItem::with('pet.thumbnail')
-            ->when($userId, fn ($q) => $q->where('user_id', $userId))
-            ->when(! $userId, fn ($q) => $q->where('session_id', $sessionId))
+            ->when(
+                $userId,
+                // Authenticated: scope strictly to this user (ignore session header)
+                fn ($q) => $q->where('user_id', $userId),
+                // Guest: scope strictly to the session (user_id must be null)
+                fn ($q) => $q->whereNull('user_id')->where('session_id', $sessionId)
+            )
             ->get();
     }
 
@@ -69,8 +85,11 @@ class CartService
     public function removeItem(string $petId, ?string $userId, string $sessionId): void
     {
         $item = CartItem::where('pet_id', $petId)
-            ->when($userId, fn ($q) => $q->where('user_id', $userId))
-            ->when(! $userId, fn ($q) => $q->where('session_id', $sessionId))
+            ->when(
+                $userId,
+                fn ($q) => $q->where('user_id', $userId),
+                fn ($q) => $q->whereNull('user_id')->where('session_id', $sessionId)
+            )
             ->firstOrFail();
 
         $item->pet->update(['status' => 'available']);
@@ -83,8 +102,11 @@ class CartService
     public function removeItemById(string $cartItemId, ?string $userId, string $sessionId): void
     {
         $item = CartItem::where('id', $cartItemId)
-            ->when($userId, fn ($q) => $q->where('user_id', $userId))
-            ->when(! $userId, fn ($q) => $q->where('session_id', $sessionId))
+            ->when(
+                $userId,
+                fn ($q) => $q->where('user_id', $userId),
+                fn ($q) => $q->whereNull('user_id')->where('session_id', $sessionId)
+            )
             ->firstOrFail();
 
         $item->pet->update(['status' => 'available']);
@@ -98,7 +120,14 @@ class CartService
     {
         CartItem::where('session_id', $sessionId)
             ->whereNull('user_id')
-            ->update(['user_id' => $userId, 'session_id' => null]);
+            ->update([
+                'user_id'      => $userId,
+                'session_id'   => null,
+                // Reset the lock timer from the moment of merge so the user
+                // has a full 15 minutes from login — not from when they added
+                // the item as a guest (which may have been much earlier).
+                'locked_until' => now()->addMinutes(self::LOCK_MINUTES),
+            ]);
     }
 
     /**

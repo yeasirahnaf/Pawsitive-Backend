@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\Address;
 use App\Models\CartItem;
-use App\Models\GuestContact;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderStatusHistory;
@@ -25,22 +24,26 @@ class OrderService
         return DB::transaction(function () use ($data, $userId, $sessionId) {
             // ── 1. Load cart items ───────────────────────────────────────────
             $cartItems = CartItem::with('pet')
-                ->when($userId, fn ($q) => $q->where('user_id', $userId))
-                ->when(! $userId, fn ($q) => $q->where('session_id', $sessionId))
+                ->when(
+                    $userId,
+                    // Authenticated: scope strictly to this user
+                    fn ($q) => $q->where('user_id', $userId),
+                    // Guest: scope strictly to session (must not belong to any user)
+                    fn ($q) => $q->whereNull('user_id')->where('session_id', $sessionId)
+                )
                 ->get();
 
             if ($cartItems->isEmpty()) {
                 throw ValidationException::withMessages(['cart' => ['Your cart is empty.']]);
             }
 
-            // ── 2. Validate all pets still available (re-check inside txn) ──
-            foreach ($cartItems as $item) {
-                if ($item->isExpired()) {
-                    throw ValidationException::withMessages([
-                        'cart' => ['Your cart lock has expired. Please add items again.'],
-                    ]);
-                }
-            }
+            // ── 2. Refresh locks inside the transaction ───────────────────────
+            // Extend the lock for all items being ordered so they cannot expire
+            // between now and when the pet status is updated to 'sold'.
+            // The real double-booking guard is pet.status='reserved'; the
+            // locked_until field is a UI reservation hint, not a hard gate.
+            CartItem::whereIn('id', $cartItems->pluck('id'))
+                ->update(['locked_until' => now()->addMinutes(15)]);
 
             // ── 3. Resolve / create delivery address ─────────────────────────
             $address = Address::create([
@@ -49,30 +52,19 @@ class OrderService
                 'area'         => $data['area'] ?? null,
             ]);
 
-            // ── 4. Resolve / create guest contact ────────────────────────────
-            $guestContactId = null;
-            if (! $userId && ! empty($data['guest_email'])) {
-                $guest = GuestContact::firstOrCreate(
-                    ['email' => $data['guest_email']],
-                    ['name' => $data['guest_name'] ?? null, 'phone' => $data['guest_phone'] ?? null]
-                );
-                $guestContactId = $guest->id;
-            }
-
-            // ── 5. Calculate subtotal ────────────────────────────────────────
+            // ── 5. Calculate subtotal ─────────────────────────────────────────────
             $subtotal = $cartItems->sum(fn ($item) => $item->pet->price);
 
-            // ── 6. Create the order ──────────────────────────────────────────
+            // ── 6. Create the order ───────────────────────────────────────────────
             $order = Order::create([
-                'order_number'       => $this->generateOrderNumber(),
-                'user_id'            => $userId,
-                'guest_contact_id'   => $guestContactId,
-                'delivery_address_id'=> $address->id,
-                'subtotal'           => $subtotal,
-                'delivery_fee'       => $data['delivery_fee'] ?? 0,
-                'payment_method'     => $data['payment_method'],
-                'status'             => 'pending',
-                'notes'              => $data['notes'] ?? null,
+                'order_number'        => $this->generateOrderNumber(),
+                'user_id'             => $userId,
+                'delivery_address_id' => $address->id,
+                'subtotal'            => $subtotal,
+                'delivery_fee'        => $data['delivery_fee'] ?? 0,
+                'payment_method'      => $data['payment_method'],
+                'status'              => 'pending',
+                'notes'               => $data['notes'] ?? null,
             ]);
 
             // ── 7. Create order items (with snapshots) ───────────────────────

@@ -17,8 +17,10 @@ class CartController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        // auth('sanctum')->id() works without the auth:sanctum middleware —
+        // returns the user's UUID for a valid Bearer token, null for guests.
         $items = $this->cart->getCart(
-            $request->user()?->id,
+            auth('sanctum')->id(),
             $request->header('X-Session-Id', '')
         );
 
@@ -32,7 +34,7 @@ class CartController extends Controller
     {
         $item = $this->cart->addItem(
             $request->validated('pet_id'),
-            $request->user()?->id,
+            auth('sanctum')->id(),
             $request->header('X-Session-Id', '')
         );
 
@@ -46,7 +48,7 @@ class CartController extends Controller
     {
         $this->cart->removeItemById(
             $id,
-            $request->user()?->id,
+            auth('sanctum')->id(),
             $request->header('X-Session-Id', '')
         );
 
