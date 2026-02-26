@@ -4,20 +4,20 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateSettingRequest;
+use App\Http\Traits\ApiResponse;
 use App\Services\SettingsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class SettingsController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(private SettingsService $settings) {}
 
     public function index(): JsonResponse
     {
-        return response()->json([
-            'success' => true,
-            'data'    => $this->settings->all(),
-        ]);
+        return $this->success($this->settings->all());
     }
 
     public function update(UpdateSettingRequest $request, string $key): JsonResponse
@@ -28,7 +28,7 @@ class SettingsController extends Controller
             $request->user()->id
         );
 
-        return response()->json(['success' => true, 'data' => $setting]);
+        return $this->success($setting);
     }
 
     public function updateAll(Request $request): JsonResponse
@@ -42,13 +42,12 @@ class SettingsController extends Controller
             try {
                 $updated[$key] = $this->settings->set((string) $key, (string) $value, $request->user()->id)->typedValue();
             } catch (\Throwable $e) {
-                return response()->json([
-                    'success' => false,
-                    'error'   => "Invalid value for setting '{$key}': " . $e->getMessage(),
-                ], 422);
+                return $this->validationError(
+                    "Invalid value for setting '{$key}': " . $e->getMessage()
+                );
             }
         }
 
-        return response()->json(['success' => true, 'data' => $updated]);
+        return $this->success($updated);
     }
 }

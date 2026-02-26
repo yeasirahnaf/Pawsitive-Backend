@@ -4,25 +4,25 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
+use App\Http\Traits\ApiResponse;
 use App\Services\AuthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class AuthController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(private AuthService $auth) {}
 
     public function register(RegisterRequest $request): JsonResponse
     {
         $result = $this->auth->register($request->validated());
 
-        return response()->json([
-            'success' => true,
-            'data'    => [
-                'user'  => $result['user'],
-                'token' => $result['token'],
-            ],
-        ], 201);
+        return $this->created([
+            'user'  => $result['user'],
+            'token' => $result['token'],
+        ]);
     }
 
     public function login(LoginRequest $request): JsonResponse
@@ -32,12 +32,9 @@ class AuthController extends Controller
             $request->validated('password')
         );
 
-        return response()->json([
-            'success' => true,
-            'data'    => [
-                'user'  => $result['user'],
-                'token' => $result['token'],
-            ],
+        return $this->success([
+            'user'  => $result['user'],
+            'token' => $result['token'],
         ]);
     }
 
@@ -45,14 +42,11 @@ class AuthController extends Controller
     {
         $this->auth->logout($request->user());
 
-        return response()->json(['success' => true, 'message' => 'Logged out successfully.']);
+        return $this->success(null, 'Logged out successfully.');
     }
 
     public function me(Request $request): JsonResponse
     {
-        return response()->json([
-            'success' => true,
-            'data'    => $request->user(),
-        ]);
+        return $this->success($request->user());
     }
 }

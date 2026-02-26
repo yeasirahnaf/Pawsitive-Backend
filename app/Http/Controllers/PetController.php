@@ -4,11 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Services\GeolocationService;
 use App\Services\PetService;
+use App\Http\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class PetController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(
         private PetService         $pets,
         private GeolocationService $geo,
@@ -46,22 +49,13 @@ class PetController extends Controller
 
         $paginated = $this->pets->list($filters);
 
-        return response()->json([
-            'success' => true,
-            'data'    => $paginated->items(),
-            'meta'    => [
-                'current_page' => $paginated->currentPage(),
-                'last_page'    => $paginated->lastPage(),
-                'per_page'     => $paginated->perPage(),
-                'total'        => $paginated->total(),
-            ],
-        ]);
+        return $this->paginated($paginated);
     }
 
     public function show(string $id): JsonResponse
     {
         $pet = $this->pets->findOrFail($id);
 
-        return response()->json(['success' => true, 'data' => $pet]);
+        return $this->success($pet);
     }
 }

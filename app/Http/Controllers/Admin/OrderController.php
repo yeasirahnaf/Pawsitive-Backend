@@ -5,12 +5,15 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateOrderStatusRequest;
 use App\Models\Order;
+use App\Http\Traits\ApiResponse;
 use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class OrderController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(private OrderService $orders) {}
 
     public function index(Request $request): JsonResponse
@@ -24,15 +27,7 @@ class OrderController extends Controller
 
         $result = $query->paginate($request->integer('per_page', 20));
 
-        return response()->json([
-            'success' => true,
-            'data'    => $result->items(),
-            'meta'    => [
-                'current_page' => $result->currentPage(),
-                'last_page'    => $result->lastPage(),
-                'total'        => $result->total(),
-            ],
-        ]);
+        return $this->paginated($result);
     }
 
     public function show(string $id): JsonResponse
@@ -40,7 +35,7 @@ class OrderController extends Controller
         $order = Order::with(['user', 'guestContact', 'items', 'statusHistory', 'delivery', 'deliveryAddress'])
             ->findOrFail($id);
 
-        return response()->json(['success' => true, 'data' => $order]);
+        return $this->success($order);
     }
 
     public function updateStatus(UpdateOrderStatusRequest $request, string $id): JsonResponse
@@ -56,7 +51,7 @@ class OrderController extends Controller
             $data['cancellation_reason'] ?? null,
         );
 
-        return response()->json(['success' => true, 'data' => $updated]);
+        return $this->success($updated);
     }
 
     public function cancel(Request $request, string $id): JsonResponse
@@ -74,6 +69,6 @@ class OrderController extends Controller
             $request->input('cancellation_reason'),
         );
 
-        return response()->json(['success' => true, 'data' => $updated]);
+        return $this->success($updated);
     }
 }

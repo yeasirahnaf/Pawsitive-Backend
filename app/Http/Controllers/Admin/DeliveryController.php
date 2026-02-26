@@ -5,12 +5,15 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateDeliveryRequest;
 use App\Models\Delivery;
+use App\Http\Traits\ApiResponse;
 use App\Services\DeliveryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class DeliveryController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(private DeliveryService $deliveries) {}
 
     public function index(Request $request): JsonResponse
@@ -25,7 +28,7 @@ class DeliveryController extends Controller
 
             $calendar = $this->deliveries->getCalendar((int) $year, (int) $month);
 
-            return response()->json(['success' => true, 'data' => $calendar]);
+            return $this->success($calendar);
         }
 
         $result = Delivery::with(['order.deliveryAddress', 'order.items'])
@@ -33,15 +36,7 @@ class DeliveryController extends Controller
             ->orderByDesc('created_at')
             ->paginate($request->integer('per_page', 20));
 
-        return response()->json([
-            'success' => true,
-            'data'    => $result->items(),
-            'meta'    => [
-                'current_page' => $result->currentPage(),
-                'last_page'    => $result->lastPage(),
-                'total'        => $result->total(),
-            ],
-        ]);
+        return $this->paginated($result);
     }
 
     public function update(UpdateDeliveryRequest $request, string $id): JsonResponse
@@ -49,6 +44,6 @@ class DeliveryController extends Controller
         $delivery = Delivery::with('order')->findOrFail($id);
         $updated  = $this->deliveries->updateStatus($delivery, $request->validated());
 
-        return response()->json(['success' => true, 'data' => $updated]);
+        return $this->success($updated);
     }
 }

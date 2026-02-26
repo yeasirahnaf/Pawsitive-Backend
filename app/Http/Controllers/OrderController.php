@@ -4,12 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\PlaceOrderRequest;
 use App\Models\Order;
+use App\Http\Traits\ApiResponse;
 use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class OrderController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(private OrderService $orders) {}
 
     public function place(PlaceOrderRequest $request): JsonResponse
@@ -20,10 +23,7 @@ class OrderController extends Controller
             $request->header('X-Session-Id', '')
         );
 
-        return response()->json([
-            'success' => true,
-            'data'    => $order->load(['items', 'deliveryAddress', 'delivery']),
-        ], 201);
+        return $this->created($order->load(['items', 'deliveryAddress', 'delivery']));
     }
 
     public function history(Request $request): JsonResponse
@@ -33,18 +33,9 @@ class OrderController extends Controller
             ->orderByDesc('created_at')
             ->paginate(10);
 
-        return response()->json([
-            'success' => true,
-            'data'    => $orders->items(),
-            'meta'    => [
-                'current_page' => $orders->currentPage(),
-                'last_page'    => $orders->lastPage(),
-                'total'        => $orders->total(),
-            ],
-        ]);
+        return $this->paginated($orders);
     }
 
-   
     public function track(Request $request, string $orderNumber): JsonResponse
     {
         $request->validate(['email' => ['nullable', 'email']]);
@@ -61,16 +52,13 @@ class OrderController extends Controller
 
         $order = $query->firstOrFail();
 
-        return response()->json([
-            'success' => true,
-            'data'    => [
-                'order_number' => $order->order_number,
-                'status'       => $order->status,
-                'created_at'   => $order->created_at,
-                'history'      => $order->statusHistory,
-                'delivery'     => $order->delivery,
-                'items'        => $order->items,
-            ],
+        return $this->success([
+            'order_number' => $order->order_number,
+            'status'       => $order->status,
+            'created_at'   => $order->created_at,
+            'history'      => $order->statusHistory,
+            'delivery'     => $order->delivery,
+            'items'        => $order->items,
         ]);
     }
 }

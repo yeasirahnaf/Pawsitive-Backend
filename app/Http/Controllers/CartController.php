@@ -4,12 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\AddToCartRequest;
 use App\Models\CartItem;
+use App\Http\Traits\ApiResponse;
 use App\Services\CartService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class CartController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(private CartService $cart) {}
 
     public function index(Request $request): JsonResponse
@@ -19,7 +22,7 @@ class CartController extends Controller
             $request->header('X-Session-Id', '')
         );
 
-        return response()->json(['success' => true, 'data' => $items]);
+        return $this->success($items);
     }
 
     public function add(AddToCartRequest $request): JsonResponse
@@ -30,7 +33,7 @@ class CartController extends Controller
             $request->header('X-Session-Id', '')
         );
 
-        return response()->json(['success' => true, 'data' => $item->load('pet.thumbnail')], 201);
+        return $this->created($item->load('pet.thumbnail'));
     }
 
     public function remove(Request $request, string $id): JsonResponse
@@ -41,7 +44,7 @@ class CartController extends Controller
             $request->header('X-Session-Id', '')
         );
 
-        return response()->json(['success' => true, 'message' => 'Item removed from cart.']);
+        return $this->success(null, 'Item removed from cart.');
     }
 
     public function sync(Request $request): JsonResponse
@@ -55,6 +58,6 @@ class CartController extends Controller
 
         $items = $this->cart->getCart($request->user()->id, '');
 
-        return response()->json(['success' => true, 'data' => $items]);
+        return $this->success($items);
     }
 }

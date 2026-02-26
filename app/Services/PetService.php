@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Pet;
 use App\Models\PetBehaviour;
+use App\Exceptions\BusinessLogicException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -139,20 +140,22 @@ class PetService
     /**
      * Soft-delete. Guards against deleting pets with active cart locks or pending orders.
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws \App\Exceptions\BusinessLogicException
      */
     public function delete(Pet $pet): void
     {
         if ($pet->cartItem()->exists()) {
-            throw \Illuminate\Validation\ValidationException::withMessages([
-                'id' => ['Cannot delete a pet that is currently in a cart.'],
-            ]);
+            throw new BusinessLogicException(
+                'Cannot delete a pet that is currently in a cart.',
+                ['id' => ['Cannot delete a pet that is currently in a cart.']]
+            );
         }
 
         if ($pet->orderItems()->whereHas('order', fn ($q) => $q->whereNotIn('status', ['delivered', 'cancelled']))->exists()) {
-            throw \Illuminate\Validation\ValidationException::withMessages([
-                'id' => ['Cannot delete a pet with an active order.'],
-            ]);
+            throw new BusinessLogicException(
+                'Cannot delete a pet with an active order.',
+                ['id' => ['Cannot delete a pet with an active order.']]
+            );
         }
 
         $pet->delete();

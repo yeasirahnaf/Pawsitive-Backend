@@ -8,9 +8,10 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderStatusHistory;
 use App\Models\Delivery;
+use App\Exceptions\ValidationException;
+use App\Exceptions\BusinessLogicException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Illuminate\Validation\ValidationException;
 
 class OrderService
 {
@@ -31,7 +32,10 @@ class OrderService
                 ->get();
 
             if ($cartItems->isEmpty()) {
-                throw ValidationException::withMessages(['cart' => ['Your cart is empty.']]);
+                throw new ValidationException(
+                    'Your cart is empty.',
+                    ['cart' => ['Your cart is empty.']]
+                );
             }
 
             CartItem::whereIn('id', $cartItems->pluck('id'))
@@ -92,15 +96,16 @@ class OrderService
     /**
      * Admin: update order status with history record.
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws \App\Exceptions\BusinessLogicException
      */
     public function updateStatus(Order $order, string $newStatus, string $adminId, ?string $notes = null, ?string $cancellationReason = null): Order
     {
         $allowed = $this->allowedTransitions($order->status);
         if (! in_array($newStatus, $allowed)) {
-            throw ValidationException::withMessages([
-                'status' => ["Cannot transition from '{$order->status}' to '{$newStatus}'."],
-            ]);
+            throw new BusinessLogicException(
+                "Cannot transition from '{$order->status}' to '{$newStatus}'.",
+                ['status' => ["Cannot transition from '{$order->status}' to '{$newStatus}'."]]
+            );
         }
 
         DB::transaction(function () use ($order, $newStatus, $adminId, $notes, $cancellationReason) {

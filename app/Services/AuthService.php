@@ -3,8 +3,9 @@
 namespace App\Services;
 
 use App\Models\User;
+use App\Exceptions\AuthenticationException;
+use App\Exceptions\ValidationException;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
 
 class AuthService
 {
@@ -32,23 +33,26 @@ class AuthService
     /**
      * Authenticate a user. Enforces 5-attempt lockout (15-minute window).
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws \App\Exceptions\AuthenticationException
+     * @throws \App\Exceptions\ValidationException
      */
     public function login(string $email, string $password): array
     {
         $user = User::where('email', $email)->first();
 
         if (! $user) {
-            throw ValidationException::withMessages([
-                'email' => ['These credentials do not match our records.'],
-            ]);
+            throw new AuthenticationException(
+                'These credentials do not match our records.',
+                ['email' => ['These credentials do not match our records.']]
+            );
         }
 
         if ($user->isLocked()) {
             $minutes = (int) now()->diffInMinutes($user->locked_until, false) * -1;
-            throw ValidationException::withMessages([
-                'email' => ["Account is locked. Try again in {$minutes} minute(s)."],
-            ]);
+            throw new ValidationException(
+                'Account is locked.',
+                ['email' => ["Account is locked. Try again in {$minutes} minute(s)."]]
+            );
         }
 
         if (! Hash::check($password, $user->password)) {
@@ -63,9 +67,10 @@ class AuthService
 
             $user->update($update);
 
-            throw ValidationException::withMessages([
-                'email' => ['These credentials do not match our records.'],
-            ]);
+            throw new AuthenticationException(
+                'These credentials do not match our records.',
+                ['email' => ['These credentials do not match our records.']]
+            );
         }
 
         $user->update([

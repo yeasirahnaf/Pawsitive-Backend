@@ -4,8 +4,9 @@ namespace App\Services;
 
 use App\Models\CartItem;
 use App\Models\Pet;
+use App\Exceptions\BusinessLogicException;
+use App\Exceptions\ConflictException;
 use Illuminate\Support\Collection;
-use Illuminate\Validation\ValidationException;
 
 class CartService
 {
@@ -14,24 +15,29 @@ class CartService
     /**
      * Add a pet to the cart (creates a 15-min inventory lock).
      * Prevents double-locking the same pet.
+     *
+     * @throws \App\Exceptions\BusinessLogicException
+     * @throws \App\Exceptions\ConflictException
      */
     public function addItem(string $petId, ?string $userId, string $sessionId): CartItem
     {
         $pet = Pet::findOrFail($petId);
 
         if (! $pet->isAvailable()) {
-            throw ValidationException::withMessages([
-                'pet_id' => ['This pet is not available.'],
-            ]);
+            throw new BusinessLogicException(
+                'This pet is not available.',
+                ['pet_id' => ['This pet is not available.']]
+            );
         }
 
         $existing = CartItem::where('pet_id', $petId)->first();
 
         if ($existing) {
             if (! $existing->isExpired()) {
-                throw ValidationException::withMessages([
-                    'pet_id' => ['This pet is already reserved by another customer.'],
-                ]);
+                throw new ConflictException(
+                    'This pet is already reserved.',
+                    ['pet_id' => ['This pet is already reserved by another customer.']]
+                );
             }
             $existing->delete();
         }

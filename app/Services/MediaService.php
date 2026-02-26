@@ -4,9 +4,9 @@ namespace App\Services;
 
 use App\Models\Pet;
 use App\Models\PetImage;
+use App\Exceptions\BusinessLogicException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\ValidationException;
 
 class MediaService
 {
@@ -66,15 +66,18 @@ class MediaService
     /**
      * Delete an image from disk and the database.
      * Guards against removing the only thumbnail (must reassign first).
+     *
+     * @throws \App\Exceptions\BusinessLogicException
      */
     public function deleteImage(Pet $pet, string $imageId): void
     {
         $image = PetImage::where('id', $imageId)->where('pet_id', $pet->id)->firstOrFail();
 
         if ($image->is_thumbnail && $pet->images()->count() > 1) {
-            throw ValidationException::withMessages([
-                'image_id' => ['Cannot delete the thumbnail. Set another image as thumbnail first.'],
-            ]);
+            throw new BusinessLogicException(
+                'Cannot delete the thumbnail.',
+                ['image_id' => ['Cannot delete the thumbnail. Set another image as thumbnail first.']]
+            );
         }
 
         Storage::disk(self::DISK)->delete($image->file_path);

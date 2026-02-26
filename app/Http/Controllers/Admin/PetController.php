@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StorePetRequest;
 use App\Http\Requests\UpdatePetRequest;
 use App\Models\Pet;
+use App\Http\Traits\ApiResponse;
 use App\Services\MediaService;
 use App\Services\PetService;
 use Illuminate\Http\JsonResponse;
@@ -13,6 +14,8 @@ use Illuminate\Http\Request;
 
 class PetController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(
         private PetService   $pets,
         private MediaService $media,
@@ -23,21 +26,13 @@ class PetController extends Controller
         $filters = $request->only(['status', 'include_deleted', 'per_page']);
         $result  = $this->pets->adminList($filters);
 
-        return response()->json([
-            'success' => true,
-            'data'    => $result->items(),
-            'meta'    => [
-                'current_page' => $result->currentPage(),
-                'last_page'    => $result->lastPage(),
-                'total'        => $result->total(),
-            ],
-        ]);
+        return $this->paginated($result);
     }
 
     public function show(string $id): JsonResponse
     {
         $pet = $this->pets->findOrFail($id);
-        return response()->json(['success' => true, 'data' => $pet]);
+        return $this->success($pet);
     }
 
     public function store(StorePetRequest $request): JsonResponse
@@ -47,7 +42,7 @@ class PetController extends Controller
 
         $pet = $this->pets->create($data, $images);
 
-        return response()->json(['success' => true, 'data' => $pet], 201);
+        return $this->created($pet);
     }
 
     public function update(UpdatePetRequest $request, string $id): JsonResponse
@@ -58,7 +53,7 @@ class PetController extends Controller
 
         $pet = $this->pets->update($pet, $data, $images);
 
-        return response()->json(['success' => true, 'data' => $pet]);
+        return $this->success($pet);
     }
 
     public function destroy(string $id): JsonResponse
@@ -66,7 +61,7 @@ class PetController extends Controller
         $pet = Pet::findOrFail($id);
         $this->pets->delete($pet);
 
-        return response()->json(['success' => true, 'message' => 'Pet soft-deleted.']);
+        return $this->success(null, 'Pet soft-deleted.');
     }
 
     public function uploadImages(Request $request, string $id): JsonResponse
@@ -79,7 +74,7 @@ class PetController extends Controller
         $pet    = Pet::findOrFail($id);
         $stored = $this->media->storeImages($pet, $request->file('images'));
 
-        return response()->json(['success' => true, 'data' => $stored], 201);
+        return $this->created($stored);
     }
 
     public function setThumbnail(string $petId, string $imageId): JsonResponse
@@ -87,7 +82,7 @@ class PetController extends Controller
         $pet   = Pet::findOrFail($petId);
         $image = $this->media->setThumbnail($pet, $imageId);
 
-        return response()->json(['success' => true, 'data' => $image]);
+        return $this->success($image);
     }
 
     public function deleteImage(string $petId, string $imageId): JsonResponse
@@ -95,6 +90,6 @@ class PetController extends Controller
         $pet = Pet::findOrFail($petId);
         $this->media->deleteImage($pet, $imageId);
 
-        return response()->json(['success' => true, 'message' => 'Image deleted.']);
+        return $this->success(null, 'Image deleted.');
     }
 }
