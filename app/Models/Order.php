@@ -33,8 +33,8 @@ class Order extends Model
     protected function casts(): array
     {
         return [
-            'subtotal'     => 'decimal:2',
-            'delivery_fee' => 'decimal:2',
+            'subtotal'     => 'float',
+            'delivery_fee' => 'float',
             'cancelled_at' => 'datetime',
             'delivered_at' => 'datetime',
         ];

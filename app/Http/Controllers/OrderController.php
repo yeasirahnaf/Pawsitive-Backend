@@ -49,7 +49,7 @@ class OrderController extends Controller
     {
         $request->validate(['email' => ['nullable', 'email']]);
 
-        $query = Order::with(['statusHistory', 'delivery'])
+        $query = Order::with(['statusHistory', 'delivery', 'items.pet'])
             ->where('order_number', $orderNumber);
 
         if ($request->filled('email')) {
@@ -66,8 +66,10 @@ class OrderController extends Controller
             'data'    => [
                 'order_number' => $order->order_number,
                 'status'       => $order->status,
+                'created_at'   => $order->created_at,
                 'history'      => $order->statusHistory,
                 'delivery'     => $order->delivery,
+                'items'        => $order->items,
             ],
         ]);
     }

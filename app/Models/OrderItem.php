@@ -30,7 +30,7 @@ class OrderItem extends Model
     protected function casts(): array
     {
         return [
-            'price_snapshot' => 'decimal:2',
+            'price_snapshot' => 'float',
         ];
     }
 
