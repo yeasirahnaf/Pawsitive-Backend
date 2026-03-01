@@ -30,12 +30,6 @@ class AuthService
         return ['user' => $user, 'token' => $token];
     }
 
-    /**
-     * Authenticate a user. Enforces 5-attempt lockout (15-minute window).
-     *
-     * @throws \App\Exceptions\AuthenticationException
-     * @throws \App\Exceptions\ValidationException
-     */
     public function login(string $email, string $password): array
     {
         $user = User::where('email', $email)->first();

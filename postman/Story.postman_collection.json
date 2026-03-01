@@ -1,0 +1,413 @@
+{
+  "info": {
+    "name": "Story API",
+    "_postman_id": "b3f5d3d2-0d2a-4b2a-8a86-6f6c44f8e1a7",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Generated from routes/api.php on 2026-02-27."
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8000/api/v1" },
+    { "key": "token", "value": "" },
+    { "key": "adminToken", "value": "" },
+    { "key": "petId", "value": "1" },
+    { "key": "orderNumber", "value": "ORD-0001" },
+    { "key": "orderId", "value": "1" },
+    { "key": "cartItemId", "value": "1" },
+    { "key": "imageId", "value": "1" },
+    { "key": "deliveryId", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "Public",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/health"
+          }
+        },
+        {
+          "name": "List Pets",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/pets"
+          }
+        },
+        {
+          "name": "Get Pet",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/pets/{{petId}}"
+          }
+        },
+        {
+          "name": "Track Order",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/orders/{{orderNumber}}"
+          }
+        },
+        {
+          "name": "Get Cart",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/cart"
+          }
+        },
+        {
+          "name": "Add Cart Item",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pet_id\": \"{{petId}}\",\n  \"quantity\": 1\n}"
+            },
+            "url": "{{baseUrl}}/cart/items"
+          }
+        },
+        {
+          "name": "Remove Cart Item",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/cart/items/{{cartItemId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jane Doe\",\n  \"email\": \"jane@example.com\",\n  \"password\": \"password\",\n  \"password_confirmation\": \"password\"\n}"
+            },
+            "url": "{{baseUrl}}/register"
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"jane@example.com\",\n  \"password\": \"password\"\n}"
+            },
+            "url": "{{baseUrl}}/login"
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{token}}", "type": "string" }
+              ]
+            },
+            "method": "POST",
+            "url": "{{baseUrl}}/logout"
+          }
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{token}}", "type": "string" }
+              ]
+            },
+            "method": "GET",
+            "url": "{{baseUrl}}/profile"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cart (Auth)",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          { "key": "token", "value": "{{token}}", "type": "string" }
+        ]
+      },
+      "item": [
+        {
+          "name": "Sync Cart",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"pet_id\": \"{{petId}}\",\n      \"quantity\": 1\n    }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/cart"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orders (Auth)",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          { "key": "token", "value": "{{token}}", "type": "string" }
+        ]
+      },
+      "item": [
+        {
+          "name": "Place Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"address_id\": 1,\n  \"notes\": \"Leave at door\"\n}"
+            },
+            "url": "{{baseUrl}}/orders"
+          }
+        },
+        {
+          "name": "Order History",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/orders"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          { "key": "token", "value": "{{adminToken}}", "type": "string" }
+        ]
+      },
+      "item": [
+        {
+          "name": "Pets",
+          "item": [
+            {
+              "name": "List Pets",
+              "request": {
+                "method": "GET",
+                "url": "{{baseUrl}}/admin/pets"
+              }
+            },
+            {
+              "name": "Create Pet",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Biscuit\",\n  \"species\": \"dog\",\n  \"age\": 2,\n  \"price\": 199.99\n}"
+                },
+                "url": "{{baseUrl}}/admin/pets"
+              }
+            },
+            {
+              "name": "Get Pet",
+              "request": {
+                "method": "GET",
+                "url": "{{baseUrl}}/admin/pets/{{petId}}"
+              }
+            },
+            {
+              "name": "Update Pet",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Biscuit\",\n  \"price\": 189.99\n}"
+                },
+                "url": "{{baseUrl}}/admin/pets/{{petId}}"
+              }
+            },
+            {
+              "name": "Delete Pet",
+              "request": {
+                "method": "DELETE",
+                "url": "{{baseUrl}}/admin/pets/{{petId}}"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Pet Images",
+          "item": [
+            {
+              "name": "Upload Images",
+              "request": {
+                "method": "POST",
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    { "key": "images[]", "type": "file" }
+                  ]
+                },
+                "url": "{{baseUrl}}/admin/pets/{{petId}}/images"
+              }
+            },
+            {
+              "name": "Set Thumbnail",
+              "request": {
+                "method": "PATCH",
+                "url": "{{baseUrl}}/admin/pets/{{petId}}/images/{{imageId}}/thumbnail"
+              }
+            },
+            {
+              "name": "Delete Image",
+              "request": {
+                "method": "DELETE",
+                "url": "{{baseUrl}}/admin/pets/{{petId}}/images/{{imageId}}"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Orders",
+          "item": [
+            {
+              "name": "List Orders",
+              "request": {
+                "method": "GET",
+                "url": "{{baseUrl}}/admin/orders"
+              }
+            },
+            {
+              "name": "Get Order",
+              "request": {
+                "method": "GET",
+                "url": "{{baseUrl}}/admin/orders/{{orderId}}"
+              }
+            },
+            {
+              "name": "Update Order Status",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"shipped\"\n}"
+                },
+                "url": "{{baseUrl}}/admin/orders/{{orderId}}/status"
+              }
+            },
+            {
+              "name": "Cancel Order",
+              "request": {
+                "method": "DELETE",
+                "url": "{{baseUrl}}/admin/orders/{{orderId}}"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Deliveries",
+          "item": [
+            {
+              "name": "List Deliveries",
+              "request": {
+                "method": "GET",
+                "url": "{{baseUrl}}/admin/deliveries?month=2026-02"
+              }
+            },
+            {
+              "name": "Update Delivery",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"delivered\"\n}"
+                },
+                "url": "{{baseUrl}}/admin/deliveries/{{deliveryId}}"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Analytics",
+          "item": [
+            {
+              "name": "Sales Analytics",
+              "request": {
+                "method": "GET",
+                "url": "{{baseUrl}}/admin/analytics/sales"
+              }
+            },
+            {
+              "name": "Inventory Analytics",
+              "request": {
+                "method": "GET",
+                "url": "{{baseUrl}}/admin/analytics/inventory"
+              }
+            },
+            {
+              "name": "Customers Analytics",
+              "request": {
+                "method": "GET",
+                "url": "{{baseUrl}}/admin/analytics/customers"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Settings",
+          "item": [
+            {
+              "name": "Get Settings",
+              "request": {
+                "method": "GET",
+                "url": "{{baseUrl}}/admin/settings"
+              }
+            },
+            {
+              "name": "Update Settings",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"settings\": {}\n}"
+                },
+                "url": "{{baseUrl}}/admin/settings"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
